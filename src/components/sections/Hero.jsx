@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowDown, Download, Sparkles } from "lucide-react";
-import clients from "../../assets/images/clients.png";
+import clients from "../../assets/images/clients.webp";
 
 const roles = [
   "Développeur Full Stack",

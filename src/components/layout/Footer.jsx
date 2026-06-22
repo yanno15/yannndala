@@ -1,5 +1,5 @@
 import { Github, Linkedin, Mail, Code2, ArrowUp } from 'lucide-react'
-import Logo from '../../assets/images/logo.png'
+import Logo from '../../assets/images/Logo.png'
 
 const socials = [
   { icon: Github, href: 'https://github.com/yanno15', label: 'GitHub' },
