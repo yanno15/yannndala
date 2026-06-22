@@ -1,5 +1,5 @@
 import { Github, Linkedin, Mail, Code2, ArrowUp } from 'lucide-react'
-import Logo from '../../assets/images/Logo.png'
+import logo from '../../assets/images/logo.png'
 
 const socials = [
   { icon: Github, href: 'https://github.com/yanno15', label: 'GitHub' },
@@ -19,7 +19,7 @@ export default function Footer() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-neon-purple flex items-center justify-center">
               <Code2 size={14} className="text-white" />
             </div>
-            <img src={Logo} alt="Logo" className=" h-6" />
+            <img src={logo} alt="logo" className=" h-6" />
           </div>
 
           {/* Socials */}
@@ -48,7 +48,7 @@ export default function Footer() {
 
         <div className="mt-8 pt-6 border-t border-border/50 text-center">
           <p className="text-muted text-xs font-mono">
-            © {new Date().getFullYear()}By Yann Ndala. Tous droits réservés.
+            © {new Date().getFullYear()} By Yann Ndala. Tous droits réservés.
           </p>
         </div>
       </div>
