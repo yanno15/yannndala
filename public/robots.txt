@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Bloquer l'admin
+Disallow: /admin/
+Disallow: /admin/login
+
+# Sitemap
+Sitemap: https://yannndala.vercel.app/sitemap.xml
