@@ -97,7 +97,7 @@ export default function About() {
                   width={56}
                   height={56}
                   className="w-full h-full object-cover rounded-full"
-                  loading="eager"
+                  loading="lazy"
                 />
               </div>
               <div>

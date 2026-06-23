@@ -104,7 +104,8 @@ function ProjectCard({ project }) {
             <Layers size={40} className="text-brand-500/40" />
           </div>
         )}
-        <span className="absolute top-3 left-3 tag capitalize">{project.category}</span>
+        {/* Couleur forcée de manière strictement blanche ici */}
+        <span className="absolute top-3 left-3 tag capitalize text-white">{project.category}</span>
         {project.featured && (
           <span className="absolute top-3 right-3 text-xs font-mono px-2 py-1 rounded bg-brand-600/80 text-white">
             ★ Featured

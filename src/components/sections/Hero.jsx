@@ -117,6 +117,7 @@ export default function Hero() {
                       alt="Clients satisfaits"
                       className=" object-contain"
                       width="50" height="10"
+                      loading="lazy"
                     />
                   ),
                   label: "Clients satisfaits",

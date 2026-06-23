@@ -30,6 +30,16 @@ const publishNow = async (pubId) => {
   return { data, error }
 }
 
+// ── Helper pour optimiser l'URL Supabase à la volée ───────────
+const optimizeSupabaseUrl = (url, width = 600, height = 400) => {
+  if (!url) return ''
+  // Si l'image provient bien de votre stockage Supabase, on lui injecte les paramètres
+  if (url.includes('supabase.co/storage/v1/object/public/')) {
+    return `${url}?width=${width}&height=${height}&resize=contain&format=webp`
+  }
+  return url
+}
+
 // ── Statut badge ──────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const map = {
@@ -68,7 +78,7 @@ function RichEditor({ value, onChange }) {
   }
 
   const tools = [
-    { icon: Bold,         cmd: 'bold',           title: 'Gras (Ctrl+B)' },
+    { icon: Bold,         cmd: 'bold',            title: 'Gras (Ctrl+B)' },
     { icon: Italic,       cmd: 'italic',          title: 'Italique (Ctrl+I)' },
     { sep: true },
     { icon: Heading2,     cmd: 'formatBlock',     val: 'h2', title: 'Titre H2' },
@@ -156,7 +166,14 @@ function Preview({ title, contentHtml, imageUrl, network }) {
         )}
       </div>
       {imageUrl && (
-        <img src={imageUrl} alt="visuel" className="w-full max-h-48 object-cover" />
+        <img 
+          src={optimizeSupabaseUrl(imageUrl, 600, 400)} 
+          alt="visuel" 
+          width="600"
+          height="400"
+          className="w-full max-h-48 object-cover" 
+          loading="lazy"
+        />
       )}
     </div>
   )
@@ -276,10 +293,8 @@ export default function AdminPublications() {
     setPublishing(null)
 
     if (error) {
-      // Erreur réseau ou fonction non déployée
       toast.error(`❌ ${error.message || 'Impossible de contacter la fonction. Redéployez-la.'}`, { duration: 6000 })
     } else if (data?.errors?.length > 0) {
-      // Erreur API (clés invalides, permissions, etc.)
       data.errors.forEach((e) => toast.error(`❌ ${e}`, { duration: 8000 }))
     } else {
       toast.success('✅ Publié avec succès !')
@@ -332,9 +347,16 @@ export default function AdminPublications() {
         <div className="space-y-3">
           {filtered.map((pub) => (
             <div key={pub.id} className="glass glow-border rounded-2xl p-5 flex gap-4 group hover:border-brand-500/30 transition-all">
-              {/* Visuel miniature */}
+              {/* Visuel miniature optimisé (150x150) */}
               {pub.image_url ? (
-                <img src={pub.image_url} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                <img 
+                  src={optimizeSupabaseUrl(pub.image_url, 150, 150)} 
+                  alt="" 
+                  width="64"
+                  height="64"
+                  className="w-16 h-16 rounded-xl object-cover shrink-0" 
+                  loading="lazy"
+                />
               ) : (
                 <div className="w-16 h-16 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center shrink-0">
                   <FileText size={20} className="text-brand-400/50" />
@@ -465,7 +487,13 @@ export default function AdminPublications() {
                   <label className="block text-muted text-xs mb-2 font-mono">Visuel (optionnel)</label>
                   {form.image_url ? (
                     <div className="relative rounded-xl overflow-hidden">
-                      <img src={form.image_url} alt="" className="w-full max-h-48 object-cover" />
+                      <img 
+                        src={optimizeSupabaseUrl(form.image_url, 600, 400)} 
+                        alt="" 
+                        width="600"
+                        height="400"
+                        className="w-full max-h-48 object-cover" 
+                      />
                       <button
                         onClick={() => setForm((p) => ({ ...p, image_url: '' }))}
                         className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-red-500/80 transition-colors"
@@ -559,7 +587,6 @@ export default function AdminPublications() {
                   ) : (
                     <button
                       onClick={async () => {
-                        // Sauvegarder d'abord, puis publier
                         if (!form.content_html && !form.content) {
                           return toast.error('Le contenu est requis.')
                         }
@@ -583,7 +610,7 @@ export default function AdminPublications() {
                         if (saveErr) return toast.error('Erreur sauvegarde.')
                         setModal(false)
                         await load()
-                        // Publier immédiatement
+                        
                         const pubId = saved?.id ?? editId
                         if (pubId) {
                           setPublishing(pubId)
