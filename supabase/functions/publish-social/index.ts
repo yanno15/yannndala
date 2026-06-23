@@ -6,6 +6,52 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// ── Upload image vers LinkedIn (obligatoire pour les posts avec image) ──
+async function uploadImageToLinkedIn(imageUrl: string, liToken: string, liPerson: string): Promise<string> {
+  // ÉTAPE 1 : Enregistrer l'upload
+  const registerRes = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${liToken}`,
+      'Content-Type': 'application/json',
+      'X-Restli-Protocol-Version': '2.0.0',
+    },
+    body: JSON.stringify({
+      registerUploadRequest: {
+        recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+        owner: liPerson,
+        serviceRelationships: [{
+          relationshipType: 'OWNER',
+          identifier: 'urn:li:userGeneratedContent',
+        }],
+      },
+    }),
+  })
+
+  const registerData = await registerRes.json()
+  if (!registerRes.ok) throw new Error(`LinkedIn registerUpload: ${JSON.stringify(registerData)}`)
+
+  const uploadUrl = registerData?.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl
+  const assetUrn  = registerData?.value?.asset
+
+  if (!uploadUrl || !assetUrn) throw new Error('LinkedIn: uploadUrl ou assetUrn manquant')
+
+  // ÉTAPE 2 : Télécharger l'image depuis Supabase
+  const imgRes = await fetch(imageUrl)
+  if (!imgRes.ok) throw new Error(`Impossible de télécharger l'image: ${imageUrl}`)
+  const imgBuffer = await imgRes.arrayBuffer()
+
+  // ÉTAPE 3 : Uploader le binaire vers LinkedIn
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${liToken}` },
+    body: imgBuffer,
+  })
+  if (!uploadRes.ok) throw new Error(`LinkedIn upload binaire échoué: ${uploadRes.status}`)
+
+  return assetUrn
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -20,7 +66,6 @@ serve(async (req) => {
       )
     }
 
-    // Connexion Supabase — essaie les deux clés possibles
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
                      ?? Deno.env.get('SUPABASE_SECRET_KEYS')
@@ -28,7 +73,7 @@ serve(async (req) => {
 
     if (!supabaseUrl || !serviceKey) {
       return new Response(
-        JSON.stringify({ error: 'SUPABASE_URL ou clé service manquante dans les secrets' }),
+        JSON.stringify({ error: 'SUPABASE_URL ou clé service manquante' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
@@ -49,11 +94,8 @@ serve(async (req) => {
       )
     }
 
-    // 2. Clés API — secrets Supabase EN PRIORITÉ, fallback table settings
-    const { data: settingsRows } = await supabase
-      .from('settings')
-      .select('key, value')
-
+    // 2. Clés API
+    const { data: settingsRows } = await supabase.from('settings').select('key, value')
     const s: Record<string, string> = {}
     for (const row of (settingsRows ?? [])) s[row.key] = row.value
 
@@ -65,18 +107,21 @@ serve(async (req) => {
     const results: Record<string, string> = {}
     const errors: string[] = []
 
-    // 3. Facebook
+    // ── 3. FACEBOOK ───────────────────────────────────────────────────────
     if (pub.networks.includes('facebook')) {
       if (!FB_PAGE_ID || !FB_PAGE_TOKEN) {
-        const msg = 'Page ID ou Token Facebook manquant dans les secrets'
-        errors.push(msg)
-        results.facebook = `error: ${msg}`
+        const msg = 'Page ID ou Token Facebook manquant'
+        errors.push(msg); results.facebook = `error: ${msg}`
       } else {
         try {
           const message = [pub.title, pub.content].filter(Boolean).join('\n\n')
 
+          // ✅ FIX FACEBOOK : utiliser /feed avec link_url pour les images
+          // (évite l'erreur "Cannot call API on behalf of user")
           let fbRes: Response
+
           if (pub.image_url) {
+            // Poster via /photos avec l'URL de l'image
             fbRes = await fetch(
               `https://graph.facebook.com/v19.0/${FB_PAGE_ID}/photos`,
               {
@@ -86,6 +131,7 @@ serve(async (req) => {
                   url: pub.image_url,
                   caption: message,
                   access_token: FB_PAGE_TOKEN,
+                  published: true,
                 }),
               }
             )
@@ -104,7 +150,7 @@ serve(async (req) => {
           }
 
           const fbData = await fbRes.json()
-          if (fbData.error) throw new Error(`${fbData.error.code} — ${fbData.error.message}`)
+          if (fbData.error) throw new Error(`FB ${fbData.error.code}: ${fbData.error.message}`)
           results.facebook = fbData.id ?? 'ok'
 
         } catch (e: any) {
@@ -114,38 +160,41 @@ serve(async (req) => {
       }
     }
 
-    // 4. LinkedIn
+    // ── 4. LINKEDIN ───────────────────────────────────────────────────────
     if (pub.networks.includes('linkedin')) {
       if (!LI_TOKEN || !LI_PERSON) {
-        const msg = 'Token ou Person URN LinkedIn manquant dans les secrets'
-        errors.push(msg)
-        results.linkedin = `error: ${msg}`
+        const msg = 'Token ou Person URN LinkedIn manquant'
+        errors.push(msg); results.linkedin = `error: ${msg}`
       } else {
         try {
           const text = [pub.title, pub.content].filter(Boolean).join('\n\n')
 
-          const liBody: any = {
+          const shareContent: any = {
+            shareCommentary: { text },
+            shareMediaCategory: pub.image_url ? 'IMAGE' : 'NONE',
+          }
+
+          // ✅ FIX LINKEDIN : upload l'image via l'API pour obtenir un URN
+          if (pub.image_url) {
+            const assetUrn = await uploadImageToLinkedIn(pub.image_url, LI_TOKEN, LI_PERSON)
+            shareContent.media = [{
+              status: 'READY',
+              media: assetUrn,  // ← URN obligatoire, pas une URL directe
+            }]
+          }
+
+          const liBody = {
             author: LI_PERSON,
             lifecycleState: 'PUBLISHED',
             specificContent: {
-              'com.linkedin.ugc.ShareContent': {
-                shareCommentary: { text },
-                shareMediaCategory: pub.image_url ? 'IMAGE' : 'NONE',
-              },
+              'com.linkedin.ugc.ShareContent': shareContent,
             },
             visibility: {
               'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
             },
           }
 
-          if (pub.image_url) {
-            liBody.specificContent['com.linkedin.ugc.ShareContent'].media = [{
-              status: 'READY',
-              originalUrl: pub.image_url,
-            }]
-          }
-
-          const liRes  = await fetch('https://api.linkedin.com/v2/ugcPosts', {
+          const liRes = await fetch('https://api.linkedin.com/v2/ugcPosts', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${LI_TOKEN}`,
@@ -156,9 +205,7 @@ serve(async (req) => {
           })
 
           const liData = await liRes.json()
-          if (liData.message || liData.status >= 400) {
-            throw new Error(liData.message ?? JSON.stringify(liData))
-          }
+          if (!liRes.ok) throw new Error(liData.message ?? JSON.stringify(liData))
           results.linkedin = liData.id ?? 'ok'
 
         } catch (e: any) {
@@ -170,7 +217,6 @@ serve(async (req) => {
 
     // 5. Statut final
     const newStatus = errors.length > 0 ? 'failed' : 'published'
-
     await supabase
       .from('publications')
       .update({
@@ -180,7 +226,6 @@ serve(async (req) => {
       })
       .eq('id', publication_id)
 
-    // Retourner le détail des erreurs pour affichage dans le dashboard
     if (errors.length > 0) {
       return new Response(
         JSON.stringify({ success: false, errors, results }),
