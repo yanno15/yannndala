@@ -101,7 +101,7 @@ export default function Hero() {
             <p className="text-subtle text-lg max-w-xl leading-relaxed">
               Je conçois et développe des applications web et mobiles
               performantes, et j'élabore des stratégies digitales qui
-              convertissent. Du code propre à la croissance digitale —
+              convertissent. Du code propre à la croissance digitale 
               tout sous un même toit.
             </p>
 
@@ -115,7 +115,8 @@ export default function Hero() {
                     <img
                       src={clients}
                       alt="Clients satisfaits"
-                      className="h-8 w-20 object-contain"
+                      className=" object-contain"
+                      width="50" height="10"
                     />
                   ),
                   label: "Clients satisfaits",

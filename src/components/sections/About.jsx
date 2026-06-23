@@ -53,8 +53,7 @@ export default function About() {
             <p className="text-subtle leading-relaxed">
               Formé en systèmes & réseaux, en développement web et en marketing digital,
               je suis capable de piloter un projet de A à Z : architecture technique,
-              développement, déploiement, et visibilité en ligne. Un profil rare qui
-              apporte une valeur ajoutée unique à chaque projet.
+              développement, déploiement, et visibilité en ligne.
             </p>
 
             <div className="grid grid-cols-2 gap-4 mt-8">
@@ -89,10 +88,17 @@ export default function About() {
               )
             })}
 
-            {/* Avatar placeholder */}
+            {/* Avatar — ✅ FIX CLS : width/height explicites sur l'image */}
             <div className="glass rounded-2xl p-6 flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-600 to-neon-purple flex items-center justify-center shrink-0">
-                <img src={yann} alt="Yann NDALA" className="w-full h-full object-cover rounded-full" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-brand-600 to-neon-purple flex items-center justify-center shrink-0 overflow-hidden">
+                <img
+                  src={yann}
+                  alt="Yann NDALA"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-cover rounded-full"
+                  loading="eager"
+                />
               </div>
               <div>
                 <p className="text-white font-semibold">Yann NDALA</p>
