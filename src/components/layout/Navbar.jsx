@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
-import Logo from '../../assets/images/Logo.webp'
+import logo from '../../assets/images/logo.webp'
 import { Code2 } from 'lucide-react'
 
 const navLinks = [
@@ -47,7 +47,7 @@ export default function Navbar() {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-neon-purple flex items-center justify-center">
               <Code2 size={14} className="text-white" />
           </div>
-          <img src={Logo} alt="Logo" className="h-6 inline-block -mt-1" />
+          <img src={logo} alt="logo" className="h-6 inline-block -mt-1" />
         </Link>
 
         {/* Desktop nav */}
