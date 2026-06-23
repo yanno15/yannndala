@@ -13,6 +13,15 @@ const fallbackProjects = [
   { id: 6, slug: 'reseau-entreprise', title: 'Infrastructure Réseau PME', description: "Conception et déploiement d'une infrastructure réseau sécurisée pour une PME de 50 postes.", image_url: null, category: 'network', tags: ['Cisco', 'VPN', 'Firewall'], demo_url: null, github_url: null, featured: false },
 ]
 
+const getOptimizedProjectUrl = (url, width = 700) => {
+  if (!url) return '';
+  // Si l'image vient de votre bucket Supabase, on injecte les paramètres magiques
+  if (url.includes('supabase.co/storage/v1/object/public/')) {
+    return `${url}?width=${width}&resize=contain&format=webp&quality=80`;
+  }
+  return url;
+};
+
 const categories = [
   { key: 'all', label: 'Tous' },
   { key: 'web', label: 'Web' },
@@ -98,7 +107,7 @@ function ProjectCard({ project }) {
     <div className="glass glow-border rounded-2xl overflow-hidden group hover:border-brand-500/50 transition-all duration-300 hover:-translate-y-1 flex flex-col">
       <div className={`h-48 bg-gradient-to-br ${grad} relative overflow-hidden`}>
         {project.image_url ? (
-          <img src={project.image_url} alt={project.title} width="600" height="400" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={getOptimizedProjectUrl(project.image_url)} alt={project.title} width="600" loading="lazy" height="400" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Layers size={40} className="text-brand-500/40" />
