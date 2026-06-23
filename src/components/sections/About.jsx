@@ -1,6 +1,6 @@
 import { useReveal } from '../../hooks/useReveal'
 import { User, Layers, TrendingUp, Award } from 'lucide-react'
-import yann from '../../assets/images/yann.png'
+import yann from '../../assets/images/yann.webp'
 
 const pillars = [
   {

@@ -98,7 +98,7 @@ function ProjectCard({ project }) {
     <div className="glass glow-border rounded-2xl overflow-hidden group hover:border-brand-500/50 transition-all duration-300 hover:-translate-y-1 flex flex-col">
       <div className={`h-48 bg-gradient-to-br ${grad} relative overflow-hidden`}>
         {project.image_url ? (
-          <img src={project.image_url} alt={project.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={project.image_url} alt={project.title} width="600" height="400" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Layers size={40} className="text-brand-500/40" />
