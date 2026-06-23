@@ -68,7 +68,7 @@ export default function Hero() {
 
             {/* Badge */}
             <div className="flex items-center gap-2 glass px-4 py-2 rounded-full animate-fade-in">
-              <Sparkles size={14} className="text-brand-400" />
+              {/* <Sparkles size={14} className="text-brand-400" /> */}
               <span className="text-sm font-mono text-brand-400">
                 Disponible pour de nouveaux projets
               </span>
