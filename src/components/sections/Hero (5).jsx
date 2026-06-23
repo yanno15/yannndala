@@ -109,7 +109,7 @@ export default function Hero() {
             <div className="flex flex-wrap gap-8 py-4 border-y border-border w-full">
               {[
                 { value: "10+", label: "Projets livrés" },
-                { value: "1+", label: "Ans XP" },
+                { value: "1+", label: "Ans d'expérience" },
                 {
                   value: (
                     <img
